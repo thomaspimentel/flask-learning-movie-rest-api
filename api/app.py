@@ -1,44 +1,48 @@
-from flask import Flask, jsonify, request
+import os
+from flask import Flask, request, Response
+from database import initialize_db
+from models.movie import Movie
 
 app = Flask(__name__)
 
-movies = [
-    {
-        "name": "The Shawshank Redemption",
-        "casts": ["Tim Robbins", "Morgan Freeman", "Bob Gunton", "William Sadler"],
-        "genres": ["Drama"]
-    },
-    {
-        "name": "The Godfather ",
-        "casts": ["Marlon Brando", "Al Pacino", "James Caan", "Diane Keaton"],
-        "genres": ["Crime", "Drama"]
-    }
-]
+app.config["MONGODB_SETTINGS"] = {
+    'host': os.environ.get('DB')
+}
+
+initialize_db(app)
 
 
 @app.route('/movies', )
-def hello():
-    return jsonify(movies)
+def get_movies():
+    movies = Movie.objects().to_json()
+    return Response(movies, mimetype="application/json", status=200)
 
 
 @app.route('/movies', methods=['POST'])
 def add_movie():
-    movie = request.get_json(force=True)
-    movies.append(movie)
-    return {'id': len(movies)}, 200
+    body = request.get_json(force=True)
+    movie = Movie(**body).save()
+    id = movie.id
+    return {'id': str(id)}, 200
 
 
-@app.route('/movies/<int:index>', methods=['PUT'])
+@app.route('/movies/<id>', methods=['GET'])
+def get_movie(id):
+    movie = Movie.objects.get(id=id).to_json()
+    return Response(movie, mimetype="application/json", status=200)
+
+
+@app.route('/movies/<id>', methods=['PUT'])
 def update_movie(index):
-    movie = request.get_json(force=True)
-    movies[index] = movie
-    return jsonify(movies[index]), 200
+    body = request.get_json(force=True)
+    Movie.objects.get(id=id).update(**body)
+    return '', 200
 
 
-@app.route('/movies/<int:index>', methods=['DELETE'])
+@app.route('/movies/<id>', methods=['DELETE'])
 def delete_movie(index):
-    movies.pop(index)
-    return 'None', 200
+    Movie.objects.get(id=id).delete()
+    return '', 200
 
 
 app.run(host="0.0.0.0", debug=True)
