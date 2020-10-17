@@ -7,7 +7,7 @@ Start up docker environment with:
 docker-compose up
 ```
 
-Once Docker's up and running, you can access the api via `http://localhost:5000/api`!
+Once Docker's up and running, you can access the api via `http://localhost:5000/api`
 
 Accessible routes:
 
