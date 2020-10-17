@@ -12,8 +12,8 @@ app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY")
 mail = Mail(app)
 
-# import going here to 
-from resources.routes import initialize_routes # noautopep
+# import going here to avoid circular import error
+from resources.routes import initialize_routes  # nopep8
 
 api = Api(app, errors=errors)
 bcrypt = Bcrypt(app)
