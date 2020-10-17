@@ -24,3 +24,6 @@ services:
             - PORT=5000
             - DB=mongodb://db:27017/todoDev
             - JWT_SECRET_KEY=kjklsadfjioji234238472h34jhkb234jk09324kjnkj
+            - MAIL_SERVER=localhost
+            - MAIL_PORT=1025
+            - MAIL_USERNAME=support@movie-bag.com
