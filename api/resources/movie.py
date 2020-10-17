@@ -3,6 +3,15 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models.movie import Movie
 from models.user import User
 from flask_restful import Resource
+from mongoengine.errors import FieldDoesNotExist, NotUniqueError, DoesNotExist, ValidationError, InvalidQueryError
+from resources.errors import (
+    SchemaValidationError,
+    MovieAlreadyExistsError,
+    InternalServerError,
+    UpdatingMovieError,
+    DeletingMovieError,
+    MovieNotExistsError
+)
 
 
 class MoviesApi(Resource):
@@ -12,32 +21,56 @@ class MoviesApi(Resource):
 
     @jwt_required
     def post(self):
-        user_id = get_jwt_identity()
-        body = request.get_json(force=True)
-        user = User.objects.get(id=user_id)
-        movie = Movie(**body, added_by=user)
-        movie.save()
-        user.update(push__movies=movie)
-        user.save()
-        id = movie.id
-        return {'id': str(id)}, 200
+        try:
+            user_id = get_jwt_identity()
+            body = request.get_json(force=True)
+            user = User.objects.get(id=user_id)
+            movie = Movie(**body, added_by=user)
+            movie.save()
+            user.update(push__movies=movie)
+            user.save()
+            id = movie.id
+            return {'id': str(id)}, 200
+        except (FieldDoesNotExist, ValidationError):
+            raise SchemaValidationError
+        except NotUniqueError:
+            raise MovieAlreadyExistsError
+        except Exception:
+            raise InternalServerError
 
 
 class MovieApi(Resource):
     @jwt_required
     def put(self, id):
-        user_id = get_jwt_identity()
-        movie = Movie.objects.get(id=id, added_by=user_id)
-        body = request.get_json(force=True)
-        movie.update(**body)
-        return '', 200
+        try:
+            user_id = get_jwt_identity()
+            movie = Movie.objects.get(id=id, added_by=user_id)
+            body = request.get_json(force=True)
+            movie.update(**body)
+            return '', 200
+        except InvalidQueryError:
+            raise SchemaValidationError
+        except DoesNotExist:
+            raise UpdatingMovieError
+        except Exception:
+            raise InternalServerError
 
     def get(self, id):
-        movie = Movie.objects.get(id=id).to_json()
-        return Response(movie, mimetype="application/json", status=200)
+        try:
+            movie = Movie.objects.get(id=id).to_json()
+            return Response(movie, mimetype="application/json", status=200)
+        except DoesNotExist:
+            raise MovieNotExistsError
+        except Exception:
+            raise InternalServerError
 
     @jwt_required
     def delete(self, id):
-        user_id = get_jwt_identity()
-        Movie.objects.get(id=id, added_by=user_id).delete()
-        return '', 200
+        try:
+            user_id = get_jwt_identity()
+            Movie.objects.get(id=id, added_by=user_id).delete()
+            return '', 200
+        except DoesNotExist:
+            raise DeletingMovieError
+        except Exception:
+            raise InternalServerError

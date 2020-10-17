@@ -1,0 +1,12 @@
+{
+    "name": "flask-learning-movie-rest-api",
+    "dockerComposeFile": [
+        "./docker-compose.yml"
+    ],
+    "service": "backend",
+    "shutdownAction": "stopCompose",
+    "workspaceFolder": "/code",
+    "extensions": [
+        "ms-python.python",
+    ]
+}
